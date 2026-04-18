@@ -123,3 +123,7 @@ class Lead(Base):
         back_populates="lead",
         order_by="LeadActivityLog.created_at",
     )
+    audit_flags: Mapped[list["AuditFlag"]] = relationship(
+        back_populates="lead",
+        order_by="AuditFlag.detected_at",
+    )

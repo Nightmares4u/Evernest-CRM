@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 
+from app.api.v1.audit import router as audit_router
 from app.api.v1.health import router as health_router
 from app.api.v1.leads import router as leads_router
 from app.api.v1.whatsapp import router as whatsapp_router
 
 api_router = APIRouter()
+api_router.include_router(audit_router)
 api_router.include_router(health_router)
 api_router.include_router(leads_router)
 api_router.include_router(whatsapp_router)
