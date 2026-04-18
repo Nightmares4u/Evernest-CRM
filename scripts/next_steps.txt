@@ -1,0 +1,10 @@
+1. Initialize git and push to GitHub
+2. Set up backend virtual environment
+3. Bootstrap FastAPI app properly
+4. Add SQLAlchemy base + DB session config
+5. Create Office, Agent, Lead models
+6. Add Alembic migrations
+7. Add lead CRUD routes
+8. Add raw webhook event table and endpoint
+9. Build dashboard shell
+10. Add audit/report jobs

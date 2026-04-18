@@ -1,0 +1,12 @@
+-- Draft only. Final schema should be migrated with Alembic.
+-- Core tables planned:
+-- offices
+-- agents
+-- whatsapp_numbers
+-- leads
+-- lead_events
+-- agent_updates
+-- appointments
+-- payments
+-- audit_flags
+-- daily_reports
