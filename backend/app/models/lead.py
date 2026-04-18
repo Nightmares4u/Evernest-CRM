@@ -83,8 +83,12 @@ class Lead(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     office_id: Mapped[int] = mapped_column(ForeignKey("offices.id"), nullable=False)
     agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
+    whatsapp_number_id: Mapped[int | None] = mapped_column(
+        ForeignKey("whatsapp_numbers.id"),
+        nullable=True,
+    )
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    phone: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    phone: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[LeadStatus] = mapped_column(
@@ -112,6 +116,9 @@ class Lead(Base):
 
     office: Mapped["Office"] = relationship(back_populates="leads")
     agent: Mapped["Agent | None"] = relationship(back_populates="leads")
+    whatsapp_number: Mapped["WhatsAppNumber | None"] = relationship(
+        back_populates="leads"
+    )
     activity_logs: Mapped[list["LeadActivityLog"]] = relationship(
         back_populates="lead",
         order_by="LeadActivityLog.created_at",

@@ -25,3 +25,6 @@ class Office(Base):
 
     agents: Mapped[list["Agent"]] = relationship(back_populates="office")
     leads: Mapped[list["Lead"]] = relationship(back_populates="office")
+    whatsapp_numbers: Mapped[list["WhatsAppNumber"]] = relationship(
+        back_populates="office"
+    )

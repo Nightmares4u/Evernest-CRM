@@ -38,6 +38,7 @@ class LeadRead(BaseModel):
     id: int
     office_id: int
     agent_id: int | None
+    whatsapp_number_id: int | None
     full_name: str
     phone: str
     email: str | None

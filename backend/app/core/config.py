@@ -11,6 +11,8 @@ class Settings:
         self.app_name = os.getenv("APP_NAME", "Evernest CRM API")
         self.api_v1_prefix = os.getenv("API_V1_PREFIX", "/api/v1")
         self.debug = os.getenv("DEBUG", "false").lower() == "true"
+        self.whatsapp_verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
+        self.whatsapp_app_secret = os.getenv("WHATSAPP_APP_SECRET", "")
         self.database_url = os.getenv(
             "DATABASE_URL",
             "postgresql+psycopg2://postgres:postgres@localhost:5432/evernest_crm",

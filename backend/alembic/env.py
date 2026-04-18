@@ -11,7 +11,7 @@ if str(BASE_DIR) not in sys.path:
 
 from app.core.config import get_settings
 from app.db.base import Base
-from app.models import Agent, Lead, Office  # noqa: F401
+from app.models import Agent, Lead, Office, WhatsAppNumber, WhatsAppWebhookEvent  # noqa: F401
 
 config = context.config
 settings = get_settings()
