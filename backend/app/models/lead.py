@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, false, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -18,6 +18,11 @@ class LeadStatus(StrEnum):
     CLOSED_WON = "closed_won"
     CLOSED_LOST = "closed_lost"
     NO_RESPONSE = "no_response"
+
+
+class LeadClosureSource(StrEnum):
+    SELF_CLOSED = "self_closed"
+    SENIOR_CLOSED = "senior_closed"
 
 
 ALLOWED_LEAD_STATUS_TRANSITIONS: dict[LeadStatus, set[LeadStatus]] = {
@@ -91,6 +96,46 @@ class Lead(Base):
     phone: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    calls_made: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        server_default="0",
+        nullable=False,
+    )
+    follow_ups_made: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        server_default="0",
+        nullable=False,
+    )
+    appointment_booked: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=false(),
+        nullable=False,
+    )
+    walk_in_happened: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=false(),
+        nullable=False,
+    )
+    closed_by: Mapped[LeadClosureSource | None] = mapped_column(
+        Enum(
+            LeadClosureSource,
+            name="lead_closure_source",
+            native_enum=False,
+            validate_strings=True,
+        ),
+        nullable=True,
+    )
+    payment_collected: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=false(),
+        nullable=False,
+    )
+    remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[LeadStatus] = mapped_column(
         Enum(
             LeadStatus,
@@ -122,4 +167,8 @@ class Lead(Base):
     activity_logs: Mapped[list["LeadActivityLog"]] = relationship(
         back_populates="lead",
         order_by="LeadActivityLog.created_at",
+    )
+    operational_updates: Mapped[list["LeadOperationalUpdate"]] = relationship(
+        back_populates="lead",
+        order_by="LeadOperationalUpdate.created_at",
     )

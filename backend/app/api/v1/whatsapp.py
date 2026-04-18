@@ -1,28 +1,22 @@
+import hashlib
+import hmac
 import json
-import re
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.phone import normalize_phone_number, parse_phone_number
 from app.db.session import get_db
 from app.models import Lead, LeadActivityLog, LeadStatus, WhatsAppNumber, WhatsAppWebhookEvent
 
 router = APIRouter(prefix="/webhooks/whatsapp", tags=["whatsapp"])
 settings = get_settings()
-
-
-def _normalize_phone_number(value: Any | None) -> str | None:
-    if not value:
-        return None
-
-    normalized = re.sub(r"\D+", "", str(value))
-    return normalized or None
 
 
 def _extract_message_text(message: dict[str, Any]) -> str | None:
@@ -104,6 +98,29 @@ def _find_destination_whatsapp_number(
     return None
 
 
+def _verify_whatsapp_signature(raw_body: bytes, signature_header: str | None) -> None:
+    if not settings.whatsapp_app_secret:
+        # MVP fallback: signature verification is skipped only when the app secret is not configured.
+        return
+
+    if not signature_header or not signature_header.startswith("sha256="):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid WhatsApp webhook signature",
+        )
+
+    expected_signature = "sha256=" + hmac.new(
+        settings.whatsapp_app_secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(signature_header, expected_signature):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid WhatsApp webhook signature",
+        )
+
+
 def _is_duplicate_phone_integrity_error(error: IntegrityError) -> bool:
     message = str(error.orig).lower()
     return (
@@ -156,7 +173,12 @@ async def ingest_whatsapp_webhook(
     request: Request,
     db: Session = Depends(get_db),
 ) -> JSONResponse:
-    raw_body = (await request.body()).decode("utf-8", errors="replace")
+    raw_body_bytes = await request.body()
+    _verify_whatsapp_signature(
+        raw_body_bytes,
+        request.headers.get("x-hub-signature-256"),
+    )
+    raw_body = raw_body_bytes.decode("utf-8", errors="replace")
 
     try:
         payload = json.loads(raw_body)
@@ -197,7 +219,7 @@ async def ingest_whatsapp_webhook(
             contact = incoming_message["contact"]
             metadata = incoming_message["metadata"]
 
-            sender_phone = _normalize_phone_number(message.get("from"))
+            sender_phone = parse_phone_number(message.get("from"))
             if sender_phone is None:
                 continue
 
