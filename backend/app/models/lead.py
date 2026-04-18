@@ -11,9 +11,70 @@ class LeadStatus(StrEnum):
     NEW = "new"
     ASSIGNED = "assigned"
     CONTACTED = "contacted"
+    FOLLOW_UP = "follow_up"
+    APPOINTMENT_BOOKED = "appointment_booked"
+    WALK_IN_DONE = "walk_in_done"
     QUALIFIED = "qualified"
     CLOSED_WON = "closed_won"
     CLOSED_LOST = "closed_lost"
+    NO_RESPONSE = "no_response"
+
+
+ALLOWED_LEAD_STATUS_TRANSITIONS: dict[LeadStatus, set[LeadStatus]] = {
+    LeadStatus.NEW: {
+        LeadStatus.ASSIGNED,
+        LeadStatus.CLOSED_LOST,
+        LeadStatus.NO_RESPONSE,
+    },
+    LeadStatus.ASSIGNED: {
+        LeadStatus.CONTACTED,
+        LeadStatus.CLOSED_LOST,
+        LeadStatus.NO_RESPONSE,
+    },
+    LeadStatus.CONTACTED: {
+        LeadStatus.FOLLOW_UP,
+        LeadStatus.APPOINTMENT_BOOKED,
+        LeadStatus.QUALIFIED,
+        LeadStatus.CLOSED_LOST,
+        LeadStatus.NO_RESPONSE,
+    },
+    LeadStatus.FOLLOW_UP: {
+        LeadStatus.CONTACTED,
+        LeadStatus.APPOINTMENT_BOOKED,
+        LeadStatus.QUALIFIED,
+        LeadStatus.CLOSED_LOST,
+        LeadStatus.NO_RESPONSE,
+    },
+    LeadStatus.APPOINTMENT_BOOKED: {
+        LeadStatus.WALK_IN_DONE,
+        LeadStatus.QUALIFIED,
+        LeadStatus.CLOSED_LOST,
+        LeadStatus.NO_RESPONSE,
+    },
+    LeadStatus.WALK_IN_DONE: {
+        LeadStatus.QUALIFIED,
+        LeadStatus.CLOSED_WON,
+        LeadStatus.CLOSED_LOST,
+    },
+    LeadStatus.QUALIFIED: {
+        LeadStatus.CLOSED_WON,
+        LeadStatus.CLOSED_LOST,
+    },
+    LeadStatus.NO_RESPONSE: {
+        LeadStatus.CONTACTED,
+        LeadStatus.FOLLOW_UP,
+        LeadStatus.CLOSED_LOST,
+    },
+    LeadStatus.CLOSED_WON: set(),
+    LeadStatus.CLOSED_LOST: set(),
+}
+
+
+def can_transition_lead_status(
+    current_status: LeadStatus,
+    next_status: LeadStatus,
+) -> bool:
+    return next_status in ALLOWED_LEAD_STATUS_TRANSITIONS[current_status]
 
 
 class Lead(Base):
@@ -51,3 +112,7 @@ class Lead(Base):
 
     office: Mapped["Office"] = relationship(back_populates="leads")
     agent: Mapped["Agent | None"] = relationship(back_populates="leads")
+    activity_logs: Mapped[list["LeadActivityLog"]] = relationship(
+        back_populates="lead",
+        order_by="LeadActivityLog.created_at",
+    )
