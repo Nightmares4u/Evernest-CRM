@@ -26,3 +26,4 @@ dist/
 
 # Build artifacts
 *.sqlite3
+crm-repo-audit/
